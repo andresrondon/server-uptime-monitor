@@ -3,35 +3,15 @@
 *
 */
 
+// @TODO: to refactor file
+
 // Dependencies
 import http from 'http';
 import https from 'https';
 import { parse } from 'url';
 import { StringDecoder } from 'string_decoder';
-import { config } from './config.js';
 import fs from 'fs';
-
-// Instantiating the HTTP server
-var httpServer = http.createServer(unifiedServer);
-
-// Start the HTTP server
-httpServer.listen(config.httpPort, () => {
-    console.log(`Server listening on port ${config.httpPort} in ${config.envName} mode.`)
-})
-
-if (config.httpsEnabled) {
-    // Instantiating the HTTPS server
-    var httpsServerOptions = {
-        key: fs.readFileSync('./https/key.pem'),
-        cert: fs.readFileSync('./htpps/cert.pem')
-    };
-    var httpsServer = https.createServer(httpsServerOptions, unifiedServer);
-
-    // Start the HTTPS server
-    httpsServer.listen(config.httpsPort, () => {
-        console.log(`Server listening on port ${config.httpsPort} in ${config.envName} mode.`)
-    })
-}
+import config from './config.js';
 
 var unifiedServer = (request, response) => {
     // Get the URL and parse it
@@ -87,12 +67,33 @@ var unifiedServer = (request, response) => {
     });
 }
 
+// Instantiating the HTTP server
+var httpServer = http.createServer(unifiedServer);
+
+// Start the HTTP server
+httpServer.listen(config.httpPort, () => {
+    console.log(`Server listening on port ${config.httpPort} in ${config.envName} mode.`)
+})
+
+if (config.httpsEnabled) {
+    // Instantiating the HTTPS server
+    var httpsServerOptions = {
+        key: fs.readFileSync('./https/key.pem'),
+        cert: fs.readFileSync('./htpps/cert.pem')
+    };
+    var httpsServer = https.createServer(httpsServerOptions, unifiedServer);
+
+    // Start the HTTPS server
+    httpsServer.listen(config.httpsPort, () => {
+        console.log(`Server listening on port ${config.httpsPort} in ${config.envName} mode.`)
+    })
+}
+
 var handlers = {};
 
-// Sample handler
-handlers.sample = (data, callback) => {
-    // Callback a http status code and a payload object
-    callback(406, {name: 'Sample handler'});
+// Ping handler
+handlers.ping = (data, callback) => {
+    callback(200);
 }
 
 // Not found handler
@@ -102,5 +103,5 @@ handlers.notFound = (data, callback) => {
 
 // Define a request router
 const router = {
-    'sample': handlers.sample
+    'ping': handlers.ping
 }

@@ -27,5 +27,4 @@ environments.production = {
 var currentEnvironment = typeof process.env.NODE_ENV === 'string' ? process.env.NODE_ENV.toLowerCase() : '';
 
 // Export environment
-var environmentToExport = environments[currentEnvironment] || environments.staging;
-export let config = environmentToExport;
+export default environments[currentEnvironment] || environments.staging;
