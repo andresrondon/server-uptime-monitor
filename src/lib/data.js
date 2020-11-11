@@ -9,6 +9,7 @@
 // Dependencies
 import fs from 'fs';
 import path from 'path';
+import helpers from './helpers.js';
 
 // Container for the module (to be exported)
 var lib = {};
@@ -47,7 +48,12 @@ lib.create = (dir, fileName, data, callback) => {
 // Read data from a file
 lib.read = (dir, fileName, callback) => {
     fs.readFile(`${lib.baseDir}${dir}/${fileName}.json`, 'utf8', (err, data) => {
-        callback(err, data);
+        if (!err && data) {
+            let parsedData = helpers.parse(data);
+            callback(false, parsedData);
+        } else {
+            callback(err, data);
+        }
     })
 }
 

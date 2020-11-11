@@ -11,7 +11,9 @@ import https from 'https';
 import { parse } from 'url';
 import { StringDecoder } from 'string_decoder';
 import fs from 'fs';
-import config from './config.js';
+import config from './lib/config.js';
+import handlers from './lib/handlers.js'
+import helpers from './lib/helpers.js';
 
 var unifiedServer = (request, response) => {
     // Get the URL and parse it
@@ -46,7 +48,7 @@ var unifiedServer = (request, response) => {
             queryStringObject,
             method,
             headers,
-            payload: buffer
+            payload: helpers.parse(buffer)
         }
 
         // Route the request to the handler specified in the router
@@ -89,19 +91,8 @@ if (config.httpsEnabled) {
     })
 }
 
-var handlers = {};
-
-// Ping handler
-handlers.ping = (data, callback) => {
-    callback(200);
-}
-
-// Not found handler
-handlers.notFound = (data, callback) => {
-    callback(404);
-}
-
 // Define a request router
 const router = {
-    'ping': handlers.ping
+    'ping': handlers.ping,
+    'users': handlers.users
 }
