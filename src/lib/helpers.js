@@ -33,5 +33,22 @@ helpers.parse = (string) => {
     return obj;
 }
 
+// Create a string of random alphanumeric characters of a given length
+helpers.createRandomString = (length) => {
+    let string = "";
+    
+    length = typeof length === 'number' && length > 0 ? length : false;
+    if (length) {
+        let possibleCharacters = 'abcdefgijklmnopqrstuvwxyz0123456789';
+
+        for (let i = 1; i <= length; i++) {
+            let randomCharacter = possibleCharacters.charAt(Math.floor(Math.random() * possibleCharacters.length));
+            string += randomCharacter;
+        }
+    }
+
+    return string
+}
+
 // Export the module
 export default helpers;
