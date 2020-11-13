@@ -6,6 +6,7 @@
 // @TODO: separate handlers into their own files.
 
 // Dependencies
+import config from './config.js';
 import _data from './data.js';
 import helpers from './helpers.js';
 
@@ -42,7 +43,7 @@ handlers._users.post = (data, callback) => {
                 // Hash the password
                 let hashedPassword = helpers.hash(password);
                 if (!hashedPassword) {
-                    callback(500, { Error: 'Could not hash the user password.'});
+                    callback(500, { Error: 'Could not hash the user password.' });
                     return;
                 }
 
@@ -60,8 +61,7 @@ handlers._users.post = (data, callback) => {
                     if (!err) {
                         callback(200);
                     } else {
-                        console.log(err);
-                        callback(500, { Error: 'Could not create the new user.'});
+                        callback(500, { Error: 'Could not create the new user.' });
                     }
                 })
             } else {
@@ -134,14 +134,13 @@ handlers._users.put = (data, callback) => {
                             if (password) {
                                 userData.hashedPassword = helpers.hash(password);
                             }
-        
+
                             // Store the updated object
                             _data.update('users', phone, userData, (err) => {
                                 if (!err) {
                                     callback(200);
                                 } else {
-                                    console.log(err);
-                                    callback(500, { Error: 'Could not update the user.' });
+                                    callback(500, { Error: 'Could not update the user.' + err });
                                 }
                             });
                         } else {
@@ -213,7 +212,7 @@ handlers._tokens = {};
 handlers._tokens.post = (data, callback) => {
     let phone = typeof data.payload.phone === 'string' && data.payload.phone.trim().length > 0 ? data.payload.phone.trim() : false;
     let password = typeof data.payload.password === 'string' && data.payload.password.trim().length > 0 ? data.payload.password.trim() : false;
-    
+
     if (phone && password) {
         // Lookup the user who matches that phone number
         _data.read('users', phone, (err, userData) => {
@@ -275,7 +274,7 @@ handlers._tokens.put = (data, callback) => {
     // Check for the required fields
     let id = typeof data.payload.id === 'string' && data.payload.id.trim().length === 20 ? data.payload.id.trim() : false;
     let extend = typeof data.payload.extend === 'boolean' ? data.payload.extend : false;
-    
+
     if (id && extend) {
         // Lookup the token
         _data.read('tokens', id, (err, tokenData) => {
@@ -283,14 +282,13 @@ handlers._tokens.put = (data, callback) => {
                 // Check if the token is hasn't expired
                 if (tokenData.expires > Date.now()) {
                     tokenData.expires = Date.now() + 1000 * 60 * 60;
-                    
+
                     // Store the updated object
                     _data.update('tokens', id, tokenData, (err) => {
                         if (!err) {
                             callback(200);
                         } else {
-                            console.log(err);
-                            callback(500, { Error: 'Could not update the token.' });
+                            callback(500, { Error: 'Could not update the token.' + err });
                         }
                     });
                 } else {
@@ -333,7 +331,6 @@ handlers._tokens.delete = (data, callback) => {
 
 // Verify if token is valid for a given user
 handlers._tokens.verifyToken = (id, phone, callback) => {
-    console.log(id)
     // Lookup the token
     _data.read('tokens', id, (err, token) => {
         if (!err && token) {
@@ -347,6 +344,200 @@ handlers._tokens.verifyToken = (id, phone, callback) => {
             callback(false);
         }
     });
+}
+
+// Checks
+handlers.checks = (data, callback) => {
+    let acceptableMethods = ['post', 'get', 'put', 'delete'];
+
+    if (acceptableMethods.some(m => data.method === m)) {
+        handlers._checks[data.method](data, callback);
+    } else {
+        callback(405);
+    }
+}
+
+// Container for the checks submethods
+handlers._checks = {};
+
+// Checks - post
+// Required data: protocol, url, method, successCodes, timeoutSeconds
+handlers._checks.post = (data, callback) => {
+    let protocol = typeof data.payload.protocol === 'string' && ['http', 'https'].indexOf(data.payload.protocol) > -1 ? data.payload.protocol.trim() : false;
+    let url = typeof data.payload.url === 'string' && data.payload.url.trim().length > 0 ? data.payload.url.trim() : false;
+    let method = typeof data.payload.method === 'string' && ['post', 'get', 'put', 'delete'].indexOf(data.payload.method) > -1 ? data.payload.method.trim() : false;
+    let successCodes = data.payload.successCodes instanceof Array && data.payload.successCodes.length > 0 ? data.payload.successCodes : false;
+    let timeoutSeconds = typeof data.payload.timeoutSeconds === 'number' && data.payload.timeoutSeconds % 1 === 0 && data.payload.timeoutSeconds >= 1 && data.payload.timeoutSeconds <= 5 ? data.payload.timeoutSeconds : false;
+
+    if (protocol && url && method && successCodes && timeoutSeconds) {
+        // Validate the token from the header
+        let tokenId = typeof data.headers.token === 'string' ? data.headers.token : false;
+        _data.read('tokens', tokenId, (err, token) => {
+            if (!err && token) {
+                let userPhone = token.phone;
+                _data.read('users', userPhone, (err, userData) => {
+                    if (!err && userData) {
+                        let userChecks = userData.checks instanceof Array ? userData.checks : [];
+
+                        // Verify that the user has less checks than the max number per user
+                        if (userChecks.length < config.maxChecks) {
+                            // If valid, create a new check with a randome name. Set expiration date 1 hour in the future.
+                            let checkId = helpers.createRandomString(20);
+                            let check = {
+                                id: checkId,
+                                userPhone,
+                                url,
+                                method,
+                                successCodes,
+                                timeoutSeconds
+                            };
+
+                            // Store the check
+                            _data.create('checks', checkId, check, (err) => {
+                                if (!err) {
+                                    // Add the check id to the users object
+                                    userData.checks = userChecks;
+                                    userData.checks.push(checkId);
+
+                                    // Save the new user data
+                                    _data.update('users', userPhone, userData, (err) => {
+                                        if (!err) {
+                                            callback(200, check);
+                                        } else {
+                                            callback(500, { Error: "Could not update the user with the new check." });
+                                        }
+                                    })
+                                } else {
+                                    callback(500, { Error: "Could not create the new check. " + err });
+                                }
+                            });
+                        } else {
+                            callback(400, { Error: `The user already has the maximun number of checks per user (${config.maxChecks}).` });
+                        }
+                    } else {
+                        callback(403);
+                    }
+                });
+            } else {
+                callback(403);
+            }
+        });
+    } else {
+        callback(400, { Error: "Required fields are invalid.", RequiredFields: {protocol,url,method,successCodes,timeoutSeconds} });
+    }
+}
+
+// Checks - get
+// Required data: id
+handlers._checks.get = (data, callback) => {
+    // Validate check id
+    let id = typeof data.queryStringObject.id === 'string' && data.queryStringObject.id.trim().length === 20 ? data.queryStringObject.id.trim() : false;
+
+    if (id) {
+        // Lookup the check
+        _data.read('checks', id, (err, check) => {
+            if (!err && check) {
+                // Verify token from headers is valid and belongs to the user
+                let tokenId = typeof data.headers.token === 'string' ? data.headers.token : false;
+                handlers._tokens.verifyToken(tokenId, check.userPhone, (isValid) => {
+                    if (isValid) {
+                        callback(200, check);
+                    } else {
+                        callback(403)
+                    }
+                });
+            } else {
+                callback(404);
+            }
+        });
+    } else {
+        callback(400, { Error: 'Invalid required field(s).' });
+    }
+}
+
+// Checks - put
+// Required data: id
+// Optional data: protocol, url, method, successCodes, timeoutSeconds (at least one)
+handlers._checks.put = (data, callback) => {
+    // Check for the required fields
+    let id = typeof data.payload.id === 'string' && data.payload.id.trim().length > 0 ? data.payload.id.trim() : false;
+
+    // Optional fields
+    let protocol = typeof data.payload.protocol === 'string' && ['http', 'https'].indexOf(data.payload.protocol) > -1 ? data.payload.protocol.trim() : false;
+    let url = typeof data.payload.url === 'string' && data.payload.url.trim().length > 0 ? data.payload.url.trim() : false;
+    let method = typeof data.payload.method === 'string' && ['post', 'get', 'put', 'delete'].indexOf(data.payload.method) > -1 ? data.payload.method.trim() : false;
+    let successCodes = data.payload.successCodes instanceof Array && data.payload.successCodes.length > 0 ? data.payload.successCodes : false;
+    let timeoutSeconds = typeof data.payload.timeoutSeconds === 'number' && data.payload.timeoutSeconds % 1 === 0 && data.payload.timeoutSeconds >= 1 && data.payload.timeoutSeconds <= 5 ? data.payload.timeoutSeconds : false;
+
+    if (id) {
+        // Verify token from headers is valid
+        if (protocol || url || method || successCodes || timeoutSeconds) {
+            // Lookup the check
+            _data.read('checks', id, (err, checkData) => {
+                if (!err && checkData) {
+                    let tokenId = typeof data.headers.token === 'string' ? data.headers.token : false;
+                    handlers._tokens.verifyToken(tokenId, checkData.userPhone, (isValid) => {
+                        if (isValid) {
+                            // Update the fields necessary
+                            if (protocol) {
+                                checkData.protocol = protocol;
+                            }
+                            if (url) {
+                                checkData.url = url;
+                            }
+                            if (method) {
+                                checkData.method = method;
+                            }
+                            if (successCodes) {
+                                checkData.successCodes = successCodes;
+                            }
+                            if (timeoutSeconds) {
+                                checkData.timeoutSeconds = timeoutSeconds;
+                            }
+
+                            // Store the updated object
+                            _data.update('checks', id, checkData, (err) => {
+                                if (!err) {
+                                    callback(200);
+                                } else {
+                                    callback(500, { Error: 'Could not update the check.' });
+                                }
+                            });
+                        } else {
+                            callback(403, { Error: "Specified token is not valid." });
+                        }
+                    });
+                } else {
+                    callback(400, { Error: 'The specified check id does not exist.' });
+                }
+            });
+        } else {
+            callback(400, "Missing fields to update.")
+        }
+    } else {
+        callback(400, "Missing required field.");
+    }
+}
+
+// checks - delete
+// Required data: id
+// @TODO
+handlers._checks.delete = (data, callback) => {
+    // Validate id
+    let id = typeof data.queryStringObject.id === 'string' && data.queryStringObject.id.trim().length === 20 ? data.queryStringObject.id.trim() : false;
+
+    if (id) {
+        // Lookup the check
+        _data.read('checks', id, (err, data) => {
+            if (!err && data) {
+                // @TODO
+            } else {
+                callback(400, { Error: 'Could not find the specified check.' });
+            }
+        });
+    } else {
+        callback(400, { Error: 'Missing required field.' })
+    }
 }
 
 // Ping handler
