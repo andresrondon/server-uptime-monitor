@@ -19,7 +19,8 @@ environments.staging = {
         accountSid : 'ACfce44759a3b0f92e72120f2c8f9c2c30',
         authToken : '66319ad23fdd5ad829a9c55da8c023bb',
         fromPhone : '+15005550006'
-    }
+    },
+    checkIntervalSeconds: 30
 };
 
 // Production
@@ -34,7 +35,8 @@ environments.production = {
         accountSid : '',
         authToken : '',
         fromPhone : ''
-    }
+    },
+    checkIntervalSeconds: 60
 };
 
 // Determine which environment was passed as a command-line argument

@@ -410,6 +410,7 @@ handlers._checks.post = (data, callback) => {
                             let check = {
                                 id: checkId,
                                 userPhone,
+                                protocol,
                                 url,
                                 method,
                                 successCodes,
