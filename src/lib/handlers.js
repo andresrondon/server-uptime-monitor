@@ -161,7 +161,6 @@ handlers._users.put = (data, callback) => {
 
 // Users - delete
 // Required data: phone
-// @TODO Cleanup (delete) any other data files associated with this user
 handlers._users.delete = (data, callback) => {
     // Validate phone number
     let phone = typeof data.queryStringObject.phone === 'string' && data.queryStringObject.phone.trim().length > 0 ? data.queryStringObject.phone.trim() : false;
@@ -171,11 +170,36 @@ handlers._users.delete = (data, callback) => {
         handlers._tokens.verifyToken(tokenId, phone, (isValid) => {
             if (isValid) {
                 // Lookup the user
-                _data.read('users', phone, (err, data) => {
-                    if (!err && data) {
+                _data.read('users', phone, (err, userData) => {
+                    if (!err && userData) {
                         _data.delete('users', phone, (err) => {
                             if (!err) {
-                                callback(200);
+                                // Delete all of the checks associated with this user
+                                let userChecks = userData.checks instanceof Array ? userData.checks : [];
+                                let checksToDelete = userChecks.length;
+
+                                if (checksToDelete > 0) {
+                                    let checksDeleted = 0;
+                                    let deletionErrors = false;
+
+                                    for (let checkId of userChecks) {
+                                        _data.delete('checks', checkId, (err) => {
+                                            if (err) {
+                                                deletionErrors = true;
+                                            }
+                                            checksDeleted++;
+                                            if (checksDeleted == checksToDelete) {
+                                                if (!deletionErrors) {
+                                                    callback(200);
+                                                } else {
+                                                    callback(500, { Error: "Errors encountered while attempting to delete all user's checks."});
+                                                }
+                                            }
+                                        })
+                                    }
+                                } else {
+                                    callback(200);
+                                }
                             } else {
                                 callback(500, { Error: 'Could not delete the specified user.' });
                             }
@@ -521,16 +545,51 @@ handlers._checks.put = (data, callback) => {
 
 // checks - delete
 // Required data: id
-// @TODO
 handlers._checks.delete = (data, callback) => {
     // Validate id
     let id = typeof data.queryStringObject.id === 'string' && data.queryStringObject.id.trim().length === 20 ? data.queryStringObject.id.trim() : false;
 
     if (id) {
         // Lookup the check
-        _data.read('checks', id, (err, data) => {
-            if (!err && data) {
-                // @TODO
+        _data.read('checks', id, (err, checkData) => {
+            if (!err && checkData) {
+                let tokenId = typeof data.headers.token === 'string' ? data.headers.token : false;
+                handlers._tokens.verifyToken(tokenId, checkData.userPhone, (isValid) => {
+                    if (isValid) {
+                        // Delete the check
+                        _data.delete('checks', id, (err) => {
+                            if (!err) {
+                                _data.read('users', checkData.userPhone, (err, userData) => {
+                                    if (!err && userData) {
+                                        let userChecks = userData.checks instanceof Array ? userData.checks : [];
+                                        let checkPosition = userChecks.indexOf(id);
+                                        
+                                        if (checkPosition > -1) {
+                                            userChecks.splice(checkPosition, 1);
+                                            // Re-save the user's data
+
+                                            _data.update('users', checkData.userPhone, userData, (err) => {
+                                                if (!err) {
+                                                    callback(200);
+                                                } else {
+                                                    callback(500, { Error: 'Could not update the specified user.' });
+                                                }
+                                            })
+                                        } else {
+                                            callback(500, { Error: "Could not find the check n the user's object." })
+                                        }
+                                    } else {
+                                        callback(500, { Error: 'Could not find the user that created the check.' });
+                                    }
+                                });
+                            } else {
+                                callback(500, { Error: 'Could not delete the specified check.' });
+                            }
+                        })
+                    } else {
+                        callback(403, { Error: "Specified token is not valid." })
+                    }
+                });
             } else {
                 callback(400, { Error: 'Could not find the specified check.' });
             }
