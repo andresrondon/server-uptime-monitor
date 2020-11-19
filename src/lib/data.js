@@ -15,7 +15,7 @@ import helpers from './helpers.js';
 var lib = {};
 
 // Base directory of the data folder
-let rootPath = path.resolve();
+const rootPath = path.resolve();
 lib.baseDir = path.join(rootPath, rootPath.substr(rootPath.length - 3, 3) === "src" ? '' : 'src', '/.data/');
 
 // Write data to a file
