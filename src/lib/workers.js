@@ -12,6 +12,8 @@ import _data from './data.js';
 import _logs from './logs.js';
 import helpers from './helpers.js';
 import config from './config.js';
+import util from 'util';
+let debug = util.debuglog('workers');
 
 var workers = {};
 
@@ -26,12 +28,12 @@ workers.gatherAllChecks = () => {
             // Pass the data to the check validator
             workers.validateCheckData(originalCheckData);
           } else {
-            console.log("Error reading one of the check's data.");
+            debug("Error reading one of the check's data.");
           }
         });
       }
     } else {
-      console.log({ Error: "Could not find any checks to proccess." });
+      debug({ Error: "Could not find any checks to proccess." });
     }
   })
 }
@@ -62,7 +64,7 @@ workers.validateCheckData = (check) => {
     check.timeoutSeconds) {
     workers.performCheck(check);
   } else {
-    console.log({ Error: "One of the checks is not properly formatted. Skipping it." }, check);
+    debug({ Error: "One of the checks is not properly formatted. Skipping it." }, check);
   }
 }
 
@@ -147,10 +149,10 @@ workers.processCheckOutcome = (check, checkOutcome) => {
       if (alertWarranted) {
         workers.alertUserToStatusChange(check);
       } else {
-        console.log({ Alert: "Check outcome has not changed, no alert needed."});
+        debug({ Alert: "Check outcome has not changed, no alert needed."});
       }
     } else {
-      console.log({ Error: "Error trying to save updates to check id " + check.id });
+      debug({ Error: "Error trying to save updates to check id " + check.id });
     }
   });
 }
@@ -161,9 +163,9 @@ workers.alertUserToStatusChange = (check) => {
 
   helpers.sendTwilioSms(check.userPhone, message, (err) => {
     if (!err) {
-      console.log("Success: User was alerted to a status change in their check, via sms.", message);
+      debug("Success: User was alerted to a status change in their check, via sms.", message);
     } else {
-      console.log("Error: Could not send sms to user.");
+      debug("Error: Could not send sms to user.");
     }
   });
 }
@@ -184,9 +186,9 @@ workers.log = (check, outcome, state, alertWarranted, timeOfCheck) => {
 
   _logs.append(logFileName, logString, (err) => {
     if (!err) {
-      console.log("Logging to file succeeded.");
+      debug("Logging to file succeeded.");
     } else {
-      console.log("Logging to file failed. " + err);
+      debug("Logging to file failed. " + err);
     }
   });
 }
@@ -212,18 +214,18 @@ workers.rotateLogs = () => {
             // Truncate the log
             _logs.truncate(logId, (err) => {
               if (!err) {
-                console.log("Success truncating logFile.");
+                debug("Success truncating logFile.");
               } else {
-                console.log("Error truncating logFile.");
+                debug("Error truncating logFile.");
               }
             })
           } else {
-            console.log("Error while compressing one of the log files.", err);
+            debug("Error while compressing one of the log files.", err);
           }
         })
       }
     } else {
-      console.log("Error: could not find any logs to rotate.");
+      debug("Error: could not find any logs to rotate.");
     }
   })
 }
@@ -236,6 +238,8 @@ workers.logRotationLoop = () => {
 }
 
 workers.init = () => {
+  console.log('\x1b[33m%s\x1b[0m', 'Background workers are running.');
+
   // Execute all the checks inmediately
   workers.gatherAllChecks();
 

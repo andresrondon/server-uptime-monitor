@@ -42,10 +42,12 @@ lib.append = (fileName, str, callback) => {
 lib.list = (includeComprressedLogs, callback) => {
   fs.readdir(lib.baseDir, (err, files) => {
     if (!err && files && files.length) {
-      let trimmedFileNames = files.map(fileName => {
+      let trimmedFileNames = files
+      .map(fileName => {
         if (fileName.includes('.log')) return fileName.replace('.log', '');
         else if (fileName.includes('.gz.b64') && includeComprressedLogs) return fileName.replace('.gz.b64', '');
-      });
+      })
+      .filter(fileName => fileName);
       callback(false, trimmedFileNames);
     } else {
       callback(err, files);

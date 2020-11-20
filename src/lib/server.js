@@ -15,6 +15,7 @@ import config from './config.js';
 import handlers from './handlers.js'
 import helpers from './helpers.js';
 import path from 'path';
+let debug = util.debuglog('server');
 
 // Instantiate the server module
 var server = {};
@@ -68,7 +69,13 @@ server.unifiedServer = (request, response) => {
       response.end(payloadString);
 
       // Log the request path
-      console.log(`Returning this response: `, statusCode, payloadString);
+      if (statusCode == 200 || statusCode == 201) {
+        // log in green
+        debug('\x1b[32m%s\x1b[0m', `Returning this response: `, statusCode, payloadString);
+      } else {
+        // log in red
+        debug('\x1b[31m%s\x1b[0m', `Returning this response: `, statusCode, payloadString);
+      }
     });
   });
 }
@@ -99,12 +106,12 @@ server.router = {
 server.init = () => {
   // Start the HTTP server
   server.httpServer.listen(config.httpPort, () => {
-    console.log(`Server listening on port ${config.httpPort} in ${config.envName} mode.`)
+    console.log('\x1b[33m%s\x1b[0m', `Server listening on port ${config.httpPort} in ${config.envName} mode.`)
   });
 
   // Start the HTTPS server
   server.httpsServer && server.httpsServer.listen(config.httpsPort, () => {
-    console.log(`Server listening on port ${config.httpsPort} in ${config.envName} mode.`)
+    console.log('\x1b[33m%s\x1b[0m', `Server listening on port ${config.httpsPort} in ${config.envName} mode.`)
   });
 }
 
