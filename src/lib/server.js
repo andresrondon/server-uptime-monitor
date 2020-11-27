@@ -82,7 +82,7 @@ server.unifiedServer = (request, response) => {
       // Log the request path
       if (statusCode == 200 || statusCode == 201) {
         // log in green
-        debug('\x1b[32m%s\x1b[0m', `Returning this response: `, statusCode, payloadString);
+        debug('\x1b[32m%s\x1b[0m', `Returning this response: `, statusCode);
       } else {
         // log in red
         debug('\x1b[31m%s\x1b[0m', `Returning this response: `, statusCode, payloadString);

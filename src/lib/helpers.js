@@ -113,13 +113,14 @@ helpers.sendTwilioSms = function (phone, message, callback) {
 }
 
 // Get the string content of a template
-helpers.getTemplate = (templateName, callback) => {
+helpers.getTemplate = (templateName, data, callback) => {
     templateName = typeof templateName == 'string' && templateName.length > 0 ? templateName : false;
+    data = typeof data == "object" && data ? data : {};
 
     if (templateName) {
         fs.readFile(templateDir + templateName + '.html', 'utf8', (err, str) => {
             if (!err && str) {
-                callback(false, str);
+                callback(false, helpers.interpolate(str, data));
             } else {
                 callback('No template could be found.');
             }
@@ -127,6 +128,54 @@ helpers.getTemplate = (templateName, callback) => {
     } else {
         callback('A valid template name was not specified.');
     }
+}
+
+// Add the universal header and footer to a string
+helpers.addUniversalTemplates = (str, data, callback) => {
+    str = typeof str == 'string' && str.length > 0 ? str : false;
+    data = typeof data == "object" && data ? data : {};
+
+    // Get the header
+    helpers.getTemplate('_header', data, (err, headerString) => {
+        if (!err && headerString) {
+            // Get the foother
+            helpers.getTemplate('_footer', data, (err, footerString) => {
+                if (!err && footerString) {
+                    let fullString = headerString + str + footerString;
+                    callback(false, fullString);
+                } else {
+                    callback('Could not find the footer template.');
+                }
+            })
+        } else {
+            callback('Could not find the header template')
+        }
+    })
+}
+
+// Take a given string and a data object and find/replace all the keys within it
+helpers.interpolate = (str, data) => {
+    str = typeof str == "string" && str.length ? str : '';
+    data = typeof data == "object" && data ? data : {};
+
+    for (let keyName in data) {
+        let find = '{' + keyName + '}';
+        let value = data[keyName];
+        str = str.replace(find, value);
+    }
+
+    return str;
+}
+
+helpers.joinGlobalData = (data) => {
+    data = typeof data == "object" && data ? data : {};
+
+    let globals = {};
+    for (let keyName in config.templateGlobals) {
+        globals['global.' + keyName] = config.templateGlobals[keyName];
+    }
+
+    return {...data, ...globals};
 }
 
 // Export the module

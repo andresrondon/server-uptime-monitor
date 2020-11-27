@@ -22,9 +22,23 @@ var handlers = {};
 handlers.index = (data, callback) => {
     // Reject any request that isn't a GET
     if (data.method == 'get') {
-        helpers.getTemplate('index', (err, str) => {
+        // Prepare data for interpolation
+        let templateData = helpers.joinGlobalData({
+            'head.title': 'Home',
+            'head.description': 'This is the meta description',
+            'body.title': 'Hello templated world!',
+            'body.class': 'index'
+        });
+
+        helpers.getTemplate('index', templateData, (err, str) => {
             if (!err && str) {
-                callback(200, str, 'html');
+                helpers.addUniversalTemplates(str, templateData, (err, str) => {
+                    if (!err && str) {
+                        callback(200, str, 'html');
+                    } else {
+                        callback(500, undefined, 'html');
+                    }
+                })
             } else {
                 callback(500, undefined, 'html');
             }

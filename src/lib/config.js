@@ -20,7 +20,13 @@ environments.staging = {
         authToken : '66319ad23fdd5ad829a9c55da8c023bb',
         fromPhone : '+15005550006'
     },
-    checkIntervalSeconds: 30
+    checkIntervalSeconds: 30,
+    templateGlobals: {
+        appName: 'Uptime Checker',
+        companyName: 'NotARealCompany, Inc.',
+        yearCreated: '2020',
+        baseUrl: 'http://localhost:3000/'
+    }
 };
 
 // Production
@@ -36,7 +42,13 @@ environments.production = {
         authToken : '',
         fromPhone : ''
     },
-    checkIntervalSeconds: 60
+    checkIntervalSeconds: 60,
+    templateGlobals: {
+        appName: 'Uptime Checker',
+        companyName: 'NotARealCompany, Inc.',
+        yearCreated: '2020',
+        baseUrl: 'http://localhost:5000/'
+    }
 };
 
 // Determine which environment was passed as a command-line argument
