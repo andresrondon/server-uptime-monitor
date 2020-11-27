@@ -48,6 +48,9 @@ server.unifiedServer = (request, response) => {
     // Choose the handler this request should go to. If none, use notFound handler
     let handler = server.router[trimmedPath] || handlers.notFound;
 
+    // If the request is within the public directory, use the public handler
+    handler = trimmedPath.includes('public/') ? handlers.public : handler;
+
     // Construct the data object to send to the handler
     let data = {
       trimmedPath,
@@ -72,6 +75,30 @@ server.unifiedServer = (request, response) => {
         case 'html':
           response.setHeader('Content-Type', 'text/html');
           payloadString = typeof payload == 'string' ? payload : '';
+          break;
+        case 'javascript':
+          response.setHeader('Content-Type', 'text/javascript');
+          payloadString = typeof payload !== 'undefined' ? payload : '';
+          break;
+        case 'css':
+          response.setHeader('Content-Type', 'text/css');
+          payloadString = typeof payload !== 'undefined' ? payload : '';
+          break;
+        case 'png':
+          response.setHeader('Content-Type', 'image/png');
+          payloadString = typeof payload !== 'undefined' ? payload : '';
+          break;
+        case 'jpg':
+          response.setHeader('Content-Type', 'image/jpeg');
+          payloadString = typeof payload !== 'undefined' ? payload : '';
+          break;
+        case 'favicon':
+          response.setHeader('Content-Type', 'image/x-icon');
+          payloadString = typeof payload !== 'undefined' ? payload : '';
+          break;
+        default:
+          response.setHeader('Content-Type', 'text/plain');
+          payloadString = typeof payload !== 'undefined' ? payload : '';
           break;
       }
 
@@ -120,7 +147,9 @@ server.router = {
   'ping': handlers.ping,
   'api/users': handlers.users,
   'api/tokens': handlers.tokens,
-  'api/checks': handlers.checks
+  'api/checks': handlers.checks,
+  'favicon.ico': handlers.favicon,
+  'public': handlers.public
 }
 
 server.init = () => {

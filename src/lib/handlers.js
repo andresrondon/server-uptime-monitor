@@ -48,6 +48,62 @@ handlers.index = (data, callback) => {
     }
 }
 
+// Favicon
+handlers.favicon = (data, callback) => {
+    // Reject any request that isn't a GET
+    if (data.method == 'get') {
+        // Read in the favicon's data
+
+        helpers.getStaticAsset('favicon.ico', (err, data) => {
+            if (!err && data) {
+                callback(200, data, 'favicon');
+            } else {
+                callback(500);
+            }
+        });
+    } else {
+        callback(405);
+    }
+}
+
+// Public assets
+handlers.public = (data, callback) => {
+    // Reject any request that isn't a GET
+    if (data.method == 'get') {
+        // Get the filename being requested
+        let assetName = data.trimmedPath.replace('public/', '').trim();
+        if (assetName.length > 0) {
+            helpers.getStaticAsset(assetName, (err, data) => {
+                if (!err && data) {
+                    // Determine the content type
+                    let contentType = 'plain';
+
+                    if (assetName.includes('.css')) {
+                        contentType = 'css';
+                    } else if (assetName.includes('.png')) {
+                        contentType = 'png';
+                    } else if (assetName.includes('.jpg')) {
+                        contentType = 'jpg';
+                    } else if (assetName.includes('.ico')) {
+                        contentType = 'favicon';
+                    } else if (assetName.includes('.js')) {
+                        contentType = 'javascript';
+                    }
+                    
+                    callback(200, data, contentType);
+                } else {
+                    console.log(err, data);
+                    callback(404);
+                }
+            });
+        } else {
+            callback(404);
+        }
+    } else {
+        callback(405);
+    }
+}
+
 /*
 * JSON API Handlers
 *

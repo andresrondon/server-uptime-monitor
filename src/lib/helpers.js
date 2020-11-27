@@ -14,9 +14,10 @@ import fs from 'fs';
 // Container for all the helpers
 var helpers = {};
 
-// Base directory of the template folder
+// Base directories
 const rootPath = path.resolve();
 const templateDir = path.join(rootPath, rootPath.substr(rootPath.length - 3, 3) === "src" ? '' : 'src', '/templates/');
+const publicDir = path.join(rootPath, rootPath.substr(rootPath.length - 3, 3) === "src" ? '' : 'src', '/public/');
 
 // Create a SHA256 hash
 helpers.hash = (string) => {
@@ -176,6 +177,16 @@ helpers.joinGlobalData = (data) => {
     }
 
     return {...data, ...globals};
+}
+
+helpers.getStaticAsset = (fileName, callback) => {
+    fileName = typeof fileName == 'string' && fileName.length ? fileName : false;
+
+    if (fileName) {
+        fs.readFile(publicDir + fileName, callback);
+    } else {
+        callback('A valid file name was not specified.');
+    }
 }
 
 // Export the module
