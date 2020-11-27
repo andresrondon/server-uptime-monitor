@@ -13,6 +13,32 @@ import helpers from './helpers.js';
 // Object to be exported
 var handlers = {};
 
+/*
+* HTML Handlers
+*
+*/
+
+// Index handler
+handlers.index = (data, callback) => {
+    // Reject any request that isn't a GET
+    if (data.method == 'get') {
+        helpers.getTemplate('index', (err, str) => {
+            if (!err && str) {
+                callback(200, str, 'html');
+            } else {
+                callback(500, undefined, 'html');
+            }
+        })
+    } else {
+        callback(405, undefined, 'html');
+    }
+}
+
+/*
+* JSON API Handlers
+*
+*/
+
 // Users
 handlers.users = (data, callback) => {
     let acceptableMethods = ['post', 'get', 'put', 'delete'];
@@ -394,7 +420,8 @@ handlers._checks.post = (data, callback) => {
     let timeoutSeconds = typeof data.payload.timeoutSeconds === 'number' && data.payload.timeoutSeconds % 1 === 0 && data.payload.timeoutSeconds >= 1 && data.payload.timeoutSeconds <= 5 ? data.payload.timeoutSeconds : false;
 
     if (protocol && url && method && successCodes && timeoutSeconds) {
-        // Validate the token from the header
+        
+        // Lookup the user phone by reading the token
         let tokenId = typeof data.headers.token === 'string' ? data.headers.token : false;
         _data.read('tokens', tokenId, (err, token) => {
             if (!err && token) {

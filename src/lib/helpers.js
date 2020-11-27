@@ -8,9 +8,15 @@ import crypto from 'crypto';
 import config from './config.js'
 import querystring from 'querystring';
 import https from 'https';
+import path from 'path';
+import fs from 'fs';
 
 // Container for all the helpers
 var helpers = {};
+
+// Base directory of the template folder
+const rootPath = path.resolve();
+const templateDir = path.join(rootPath, rootPath.substr(rootPath.length - 3, 3) === "src" ? '' : 'src', '/templates/');
 
 // Create a SHA256 hash
 helpers.hash = (string) => {
@@ -103,6 +109,23 @@ helpers.sendTwilioSms = function (phone, message, callback) {
         req.end();
     } else {
         callback("Given parameters were missing or invalid");
+    }
+}
+
+// Get the string content of a template
+helpers.getTemplate = (templateName, callback) => {
+    templateName = typeof templateName == 'string' && templateName.length > 0 ? templateName : false;
+
+    if (templateName) {
+        fs.readFile(templateDir + templateName + '.html', 'utf8', (err, str) => {
+            if (!err && str) {
+                callback(false, str);
+            } else {
+                callback('No template could be found.');
+            }
+        });
+    } else {
+        callback('A valid template name was not specified.');
     }
 }
 

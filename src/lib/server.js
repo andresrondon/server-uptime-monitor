@@ -15,6 +15,7 @@ import config from './config.js';
 import handlers from './handlers.js'
 import helpers from './helpers.js';
 import path from 'path';
+import util from 'util';
 let debug = util.debuglog('server');
 
 // Instantiate the server module
@@ -57,14 +58,24 @@ server.unifiedServer = (request, response) => {
     }
 
     // Route the request to the handler specified in the router
-    handler(data, (statusCode, payload) => {
+    handler(data, (statusCode, payload, contentType) => {
+      contentType = typeof contentType == 'string' ? contentType : 'json';
       statusCode = typeof statusCode == 'number' ? statusCode : 200;
-      payload = typeof payload == 'object' ? payload : {};
+      // Return the response parts that are content-specific
+      let payloadString = '';
+      switch (contentType) {
+        case 'json':
+          response.setHeader('Content-Type', 'application/json');
+          payload = typeof payload == 'object' ? payload : {};
+          payloadString = JSON.stringify(payload);
+          break;
+        case 'html':
+          response.setHeader('Content-Type', 'text/html');
+          payloadString = typeof payload == 'string' ? payload : '';
+          break;
+      }
 
-      let payloadString = JSON.stringify(payload);
-
-      // Return the response
-      response.setHeader('Content-Type', 'application/json');
+      // Return the response parts that are common to all conten-types
       response.writeHead(statusCode);
       response.end(payloadString);
 
@@ -97,10 +108,19 @@ if (config.httpsEnabled) {
 
 // Define a request router
 server.router = {
+  '': handlers.index,
+  'account/create': handlers.accountCreate,
+  'account/edit': handlers.accountEdit,
+  'account/deleted': handlers.accountDeleted,
+  'session/create': handlers.sessionCreate,
+  'session/deleted': handlers.sessionDeleted,
+  'checks/all': handlers.checkList,
+  'checks/create': handlers.checksCreate,
+  'checks/edit': handlers.checksEdit,
   'ping': handlers.ping,
-  'users': handlers.users,
-  'tokens': handlers.tokens,
-  'checks': handlers.checks
+  'api/users': handlers.users,
+  'api/tokens': handlers.tokens,
+  'api/checks': handlers.checks
 }
 
 server.init = () => {
