@@ -25,8 +25,7 @@ handlers.index = (data, callback) => {
         // Prepare data for interpolation
         let templateData = helpers.joinGlobalData({
             'head.title': 'Home',
-            'head.description': 'This is the meta description',
-            'body.title': 'Hello templated world!',
+            'head.description': 'Uptime moonitoring made simple',
             'body.class': 'index'
         });
 
