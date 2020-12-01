@@ -36,7 +36,7 @@ helpers.parse = (string) => {
     try {
         obj = JSON.parse(string);
     } catch (e) {
-        console.log("Tried to parse incorrect JSON string. Returning an empty object.");
+        //console.log("Tried to parse incorrect JSON string. Returning an empty object.");
     }
 
     return obj;

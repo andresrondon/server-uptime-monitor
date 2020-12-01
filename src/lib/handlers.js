@@ -18,18 +18,17 @@ var handlers = {};
 *
 */
 
-// Index handler
-handlers.index = (data, callback) => {
+handlers.getPageLoader = (title, description, templateName) => (data, callback) => {
     // Reject any request that isn't a GET
     if (data.method == 'get') {
         // Prepare data for interpolation
         let templateData = helpers.joinGlobalData({
-            'head.title': 'Home',
-            'head.description': 'Uptime moonitoring made simple',
-            'body.class': 'index'
+            'head.title': title,
+            'head.description': description,
+            'body.class': templateName
         });
 
-        helpers.getTemplate('index', templateData, (err, str) => {
+        helpers.getTemplate(templateName, templateData, (err, str) => {
             if (!err && str) {
                 helpers.addUniversalTemplates(str, templateData, (err, str) => {
                     if (!err && str) {
@@ -46,6 +45,33 @@ handlers.index = (data, callback) => {
         callback(405, undefined, 'html');
     }
 }
+
+// Index handler
+handlers.index = handlers.getPageLoader('Home', 'Uptime moonitoring made simple', 'index');
+
+// Create Account
+handlers.accountCreate = handlers.getPageLoader('Create an Account', 'Singup is easy and only takes a few seconds.', 'accountCreate');
+
+// Create New Session
+handlers.sessionCreate = handlers.getPageLoader('Log in to your Account', 'Please enter your phone number and password to access your account.', 'sessionCreate');
+
+// Session has been deleted
+handlers.sessionDeleted = handlers.getPageLoader('Log in to your Account', 'You have been logged out from your account.', 'sessionDeleted');
+
+// Edit your account
+handlers.accountEdit = handlers.getPageLoader('Account Settings', '', 'accountEdit');
+
+// Account has been deleted
+handlers.accountDeleted = handlers.getPageLoader('Account Deleted', 'Your account has been deleted.', 'accountDeleted');
+
+// Create a new check
+handlers.checksCreate = handlers.getPageLoader('Create a New Check', '', 'cheksCreate');
+
+// Dashboard (view all checks)
+handlers.checksList = handlers.getPageLoader('Dashboard', '', 'checksList');
+
+// Edit a check
+handlers.checksEdit = handlers.getPageLoader('Checks Details', '', 'cheksEdit');
 
 // Favicon
 handlers.favicon = (data, callback) => {
