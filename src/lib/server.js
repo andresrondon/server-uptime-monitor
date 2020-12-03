@@ -145,6 +145,7 @@ server.router = {
   'checks/create': handlers.checksCreate,
   'checks/edit': handlers.checksEdit,
   'ping': handlers.ping,
+  'notFound': handlers.notFound,
   'api/users': handlers.users,
   'api/tokens': handlers.tokens,
   'api/checks': handlers.checks,

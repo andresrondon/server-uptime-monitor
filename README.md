@@ -5,7 +5,7 @@ This API was done following "The Node.js Master Class" @ PIRPLE.com. From scratc
 
 # to-dos
 - Refactor API to remove Callback Hells
-- Add GUI
+- Add Web GUI: DONE!
 - Add CLI
 - Add tests
 - Optimize

@@ -47,7 +47,7 @@ handlers.getPageLoader = (title, description, templateName) => (data, callback) 
 }
 
 // Index handler
-handlers.index = handlers.getPageLoader('Home', 'Uptime moonitoring made simple', 'index');
+handlers.index = handlers.getPageLoader('Home', 'Uptime monitoring made simple', 'index');
 
 // Create Account
 handlers.accountCreate = handlers.getPageLoader('Create an Account', 'Singup is easy and only takes a few seconds.', 'accountCreate');
@@ -65,7 +65,7 @@ handlers.accountEdit = handlers.getPageLoader('Account Settings', '', 'accountEd
 handlers.accountDeleted = handlers.getPageLoader('Account Deleted', 'Your account has been deleted.', 'accountDeleted');
 
 // Create a new check
-handlers.checksCreate = handlers.getPageLoader('Create a New Check', '', 'cheksCreate');
+handlers.checksCreate = handlers.getPageLoader('Create a New Check', '', 'checksCreate');
 
 // Dashboard (view all checks)
 handlers.checksList = handlers.getPageLoader('Dashboard', '', 'checksList');
