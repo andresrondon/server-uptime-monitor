@@ -13,6 +13,97 @@ var e = new _events();
 
 var cli = {};
 
+// Input handlers
+e.on('man', (str) => {
+  cli.responders.help();
+});
+
+e.on('help', (str) => {
+  cli.responders.help();
+});
+
+e.on('exit', (str) => {
+  cli.responders.exit();
+});
+
+e.on('stats', (str) => {
+  cli.responders.stats();
+});
+
+e.on('list users', (str) => {
+  cli.responders.listUsers();
+});
+
+e.on('more user info', (str) => {
+  cli.responders.moreUserInfo(str);
+});
+
+e.on('list checks', (str) => {
+  cli.responders.listChecks(str);
+});
+
+e.on('more check info', (str) => {
+  cli.responders.moreCheckInfo(str);
+});
+
+e.on('list logs', (str) => {
+  cli.responders.listLogs();
+});
+
+e.on('more log info', (str) => {
+  cli.responders.moreLogInfo(str);
+});
+
+// Responders object
+cli.responders = {};
+
+// Help / Man
+cli.responders.help = () => {
+  console.log("You asked for help")
+}
+
+// Exit
+cli.responders.help = () => {
+  console.log("You asked for exit")
+}
+
+// Stats
+cli.responders.stats = () => {
+  console.log("You asked for help")
+}
+
+// List users
+cli.responders.listUsers = () => {
+  console.log("You asked for exit")
+}
+
+// More user info
+cli.responders.moreUserInfo = (str) => {
+  console.log("You asked for exit")
+}
+
+// List checks
+cli.responders.listChecks = (str) => {
+  console.log("You asked for exit")
+}
+
+// More check info
+cli.responders.moreUserInfo = (str) => {
+  console.log("You asked for exit")
+}
+
+// List logs
+cli.responders.listLogs = () => {
+  console.log("You asked for exit")
+}
+
+// More Log info
+cli.responders.moreLogInfo = (str) => {
+  console.log("You asked for exit")
+}
+
+
+// Input processor
 cli.processInput = (str) => {
   str = typeof str === 'string' && str.trim().length > 0 ? str.trim() : false;
 
