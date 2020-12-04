@@ -156,12 +156,12 @@ server.router = {
 server.init = () => {
   // Start the HTTP server
   server.httpServer.listen(config.httpPort, () => {
-    console.log('\x1b[33m%s\x1b[0m', `Server listening on port ${config.httpPort} in ${config.envName} mode.`)
+    console.log('\x1b[32m%s\x1b[0m', `Server listening on port ${config.httpPort} in ${config.envName} mode.`)
   });
 
   // Start the HTTPS server
   server.httpsServer && server.httpsServer.listen(config.httpsPort, () => {
-    console.log('\x1b[33m%s\x1b[0m', `Server listening on port ${config.httpsPort} in ${config.envName} mode.`)
+    console.log('\x1b[32m%s\x1b[0m', `Server listening on port ${config.httpsPort} in ${config.envName} mode.`)
   });
 }
 
