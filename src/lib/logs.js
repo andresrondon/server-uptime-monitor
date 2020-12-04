@@ -39,7 +39,7 @@ lib.append = (fileName, str, callback) => {
   });
 }
 
-lib.list = (includeComprressedLogs, callback) => {
+lib.list = (includeComprressedLogs, callback) => new Promise((resolve, reject) => {
   fs.readdir(lib.baseDir, (err, files) => {
     if (!err && files && files.length) {
       let trimmedFileNames = files
@@ -48,12 +48,14 @@ lib.list = (includeComprressedLogs, callback) => {
         else if (fileName.includes('.gz.b64') && includeComprressedLogs) return fileName.replace('.gz.b64', '');
       })
       .filter(fileName => fileName);
-      callback(false, trimmedFileNames);
+      typeof callback == 'function' && (false, trimmedFileNames);
+      resolve(trimmedFileNames);
     } else {
-      callback(err, files);
+      typeof callback == 'function' && callback(err, files);
+      reject(err);
     }
   });
-}
+});
 
 lib.compress = (logId, newFileId, callback) => {
   let sourceFile = logId + '.log';
@@ -88,7 +90,7 @@ lib.compress = (logId, newFileId, callback) => {
   });
 }
 
-lib.decompress = (fileId, callback) => {
+lib.decompress = (fileId, callback) => new Promise((resolve, reject) => {
   let fileName = fileId + '.gz.b64';
   fs.readFile(lib.baseDir + fileName, 'utf8', (err, str) => {
     if (!err && str) {
@@ -97,16 +99,19 @@ lib.decompress = (fileId, callback) => {
       zlib.unzip(inputBuffer, (err, outputBuffer) => {
         if (!err, outputBuffer) {
           let outputString = outputBuffer.toString();
-          callback(false, outputString);
+          typeof callback == 'function' && callback(false, outputString);
+          resolve(outputString);
         } else {
-          callback(err);
+          typeof callback == 'function' && callback(err);
+          reject(err);
         }
       })
     } else {
-      callback(err);
+      typeof callback == 'function' && callback(err);
+      reject(err);
     }
   });
-}
+});
 
 lib.truncate = (logId, callback) => {
   fs.truncate(lib.baseDir + logId + '.log', 0, callback);

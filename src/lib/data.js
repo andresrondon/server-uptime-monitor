@@ -47,16 +47,18 @@ lib.create = (dir, fileName, data, callback) => {
 }
 
 // Read data from a file
-lib.read = (dir, fileName, callback) => {
+lib.read = (dir, fileName, callback) => new Promise((resolve, reject) => {
     fs.readFile(`${lib.baseDir}${dir}/${fileName}.json`, 'utf8', (err, data) => {
         if (!err && data) {
             let parsedData = helpers.parse(data);
-            callback(false, parsedData);
+            typeof callback == 'function' && callback(false, parsedData);
+            resolve(parsedData);
         } else {
-            callback(err, data);
+            typeof callback == 'function' && callback(err, data);
+            reject(err);
         }
-    })
-}
+    });
+});
 
 // Update data inside a file
 lib.update = (dir, fileName, data, callback) => {
@@ -104,16 +106,18 @@ lib.delete = (dir, fileName, callback) => {
 }
 
 // List all items in a directory
-lib.list = (dir, callback) => {
+lib.list = (dir, callback) => new Promise((resolve, reject) => {
     fs.readdir(lib.baseDir + dir + '/', (err, data) => {
         if (!err && data && data.length > 0) {
             let trimmedFileNames = data.map(fileName => fileName.replace('.json', ''));
-            callback(false, trimmedFileNames);
+            typeof callback == 'function' && callback(false, trimmedFileNames);
+            resolve(trimmedFileNames);
         } else {
-            callback(err, data);
+            typeof callback == 'function' && callback(err, data);
+            reject(err);
         }
     });
-}
+});
 
 // Export the module
 export default lib;
