@@ -61,60 +61,14 @@ server.unifiedServer = (request, response) => {
     }
 
     // Route the request to the handler specified in the router
-    handler(data, (statusCode, payload, contentType) => {
-      contentType = typeof contentType == 'string' ? contentType : 'json';
-      statusCode = typeof statusCode == 'number' ? statusCode : 200;
-      // Return the response parts that are content-specific
-      let payloadString = '';
-      switch (contentType) {
-        case 'json':
-          response.setHeader('Content-Type', 'application/json');
-          payload = typeof payload == 'object' ? payload : {};
-          payloadString = JSON.stringify(payload);
-          break;
-        case 'html':
-          response.setHeader('Content-Type', 'text/html');
-          payloadString = typeof payload == 'string' ? payload : '';
-          break;
-        case 'javascript':
-          response.setHeader('Content-Type', 'text/javascript');
-          payloadString = typeof payload !== 'undefined' ? payload : '';
-          break;
-        case 'css':
-          response.setHeader('Content-Type', 'text/css');
-          payloadString = typeof payload !== 'undefined' ? payload : '';
-          break;
-        case 'png':
-          response.setHeader('Content-Type', 'image/png');
-          payloadString = typeof payload !== 'undefined' ? payload : '';
-          break;
-        case 'jpg':
-          response.setHeader('Content-Type', 'image/jpeg');
-          payloadString = typeof payload !== 'undefined' ? payload : '';
-          break;
-        case 'favicon':
-          response.setHeader('Content-Type', 'image/x-icon');
-          payloadString = typeof payload !== 'undefined' ? payload : '';
-          break;
-        default:
-          response.setHeader('Content-Type', 'text/plain');
-          payloadString = typeof payload !== 'undefined' ? payload : '';
-          break;
-      }
-
-      // Return the response parts that are common to all conten-types
-      response.writeHead(statusCode);
-      response.end(payloadString);
-
-      // Log the request path
-      if (statusCode == 200 || statusCode == 201) {
-        // log in green
-        debug('\x1b[32m%s\x1b[0m', `Returning this response: `, statusCode);
-      } else {
-        // log in red
-        debug('\x1b[31m%s\x1b[0m', `Returning this response: `, statusCode, payloadString);
-      }
-    });
+    try {
+      handler(data, (statusCode, payload, contentType) => {
+        server.processHandlerResponse(response, statusCode, payload, contentType);
+      });
+    } catch (e) {
+      debug(e);
+      server.processHandlerResponse(response, 500, { Error: 'An unknown error has occurred.' }, 'json');
+    }
   });
 }
 
@@ -131,6 +85,61 @@ if (config.httpsEnabled) {
     cert: fs.readFileSync(baseDir + '/cert.pem')
   };
   server.httpsServer = https.createServer(server.httpsServerOptions, server.unifiedServer);
+}
+
+server.processHandlerResponse = (response, statusCode, payload, contentType) => {
+  contentType = typeof contentType == 'string' ? contentType : 'json';
+  statusCode = typeof statusCode == 'number' ? statusCode : 200;
+  // Return the response parts that are content-specific
+  let payloadString = '';
+  switch (contentType) {
+    case 'json':
+      response.setHeader('Content-Type', 'application/json');
+      payload = typeof payload == 'object' ? payload : {};
+      payloadString = JSON.stringify(payload);
+      break;
+    case 'html':
+      response.setHeader('Content-Type', 'text/html');
+      payloadString = typeof payload == 'string' ? payload : '';
+      break;
+    case 'javascript':
+      response.setHeader('Content-Type', 'text/javascript');
+      payloadString = typeof payload !== 'undefined' ? payload : '';
+      break;
+    case 'css':
+      response.setHeader('Content-Type', 'text/css');
+      payloadString = typeof payload !== 'undefined' ? payload : '';
+      break;
+    case 'png':
+      response.setHeader('Content-Type', 'image/png');
+      payloadString = typeof payload !== 'undefined' ? payload : '';
+      break;
+    case 'jpg':
+      response.setHeader('Content-Type', 'image/jpeg');
+      payloadString = typeof payload !== 'undefined' ? payload : '';
+      break;
+    case 'favicon':
+      response.setHeader('Content-Type', 'image/x-icon');
+      payloadString = typeof payload !== 'undefined' ? payload : '';
+      break;
+    default:
+      response.setHeader('Content-Type', 'text/plain');
+      payloadString = typeof payload !== 'undefined' ? payload : '';
+      break;
+  }
+
+  // Return the response parts that are common to all conten-types
+  response.writeHead(statusCode);
+  response.end(payloadString);
+
+  // Log the request path
+  if (statusCode == 200 || statusCode == 201) {
+    // log in green
+    debug('\x1b[32m%s\x1b[0m', `Returning this response: `, statusCode);
+  } else {
+    // log in red
+    debug('\x1b[31m%s\x1b[0m', `Returning this response: `, statusCode, payloadString);
+  }
 }
 
 // Define a request router
