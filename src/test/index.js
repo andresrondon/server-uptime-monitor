@@ -4,33 +4,25 @@
 */
 
 // Dependencies
-import assert from 'assert';
+import _builder from './errorBuilder.js';
+import _unitTests from './unit.js';
+import _apiTests from './api.js';
 
-//Application logic for the test runner
+// Application logic for the test runner
 var _app = {}
 
 // Container for the tests
-_app.tests = {
-  unit: {}
-};
+_app.tests = {};
 
-/* EXAMPLE
-/* Simple example of how to write a test
-
-_app.tests.unit['helpers.getANumber() should return 1'] = async (testName) => {
-  let result = helpers.getANumber();
-  assert.strictEqual(result, 1, testName);
-  return { displayTitle: _app.buildSuccessTitle(testName), error: false };
-}
-
-*/
+_app.tests.unit = _unitTests;
+_app.tests.api = _apiTests;
 
 _app.getAllTests = function* () {
   for (let key in _app.tests) {
     let subTests = _app.tests[key];
     for (let testName in subTests) {
       let test = subTests[testName];
-      yield test(testName).catch(_app.buildErrorOutcome);
+      yield test(testName).catch(_builder.buildErrorOutcome);
     }
   }
 }
@@ -76,18 +68,9 @@ _app.printTestReport = (outcomes) => {
 
   console.log("");
   console.log("--------END TEST REPORT--------");
+
+  process.exit(0);
 }
-
-_app.buildErrorOutcome = (error) => {
-  return {
-    displayTitle: _app.buildErrorTitle(error.message),
-    error
-  };
-}
-
-_app.buildSuccessTitle = (message) => ['\x1b[32m%s\x1b[0m', message]
-
-_app.buildErrorTitle = (message) => ['\x1b[31m%s\x1b[0m', message]
 
 // Run the tests
 _app.runTests();

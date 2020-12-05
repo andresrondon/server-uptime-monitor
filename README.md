@@ -7,5 +7,5 @@ This API was done following "The Node.js Master Class" @ PIRPLE.com. From scratc
 - Refactor API to remove Callback Hells (use async/await)
 - Add Web GUI: DONE!
 - Add CLI: DONE!
-- Add tests (Asynchronous)
+- Add tests (Asynchronous): DONE!
 - Optimize

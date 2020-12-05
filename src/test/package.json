@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "start": "NODE_ENV=testing node src/test"
+  },
+  "type": "module"
+}

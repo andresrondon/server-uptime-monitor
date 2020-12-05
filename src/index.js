@@ -11,7 +11,7 @@ import cli from './lib/cli.js';
 // Declare the app
 var app = {};
 
-app.init = () => {
+app.init = (callback) => {
     // Start the server
     server.init();
 
@@ -19,9 +19,15 @@ app.init = () => {
     workers.init();
 
     // Start the CLI (make sure it starts last)
-    setTimeout(cli.init, 50);
+    setTimeout(() => {
+        cli.init();
+        typeof callback === 'function' && callback();
+    }, 50);
 };
 
-app.init();
+// Self invoke only if not in testing environment
+if (process.env.NODE_ENV !== 'testing') {
+    app.init();
+}
 
 export default app;
