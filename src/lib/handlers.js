@@ -9,6 +9,11 @@
 import config from './config.js';
 import _data from './data.js';
 import helpers from './helpers.js';
+import _url from 'url';
+import dns from 'dns';
+import { performance as _performance } from 'perf_hooks';
+import util from 'util';
+const debug = util.debuglog('performance');
 
 // Object to be exported
 var handlers = {};
@@ -355,15 +360,22 @@ handlers._tokens = {};
 // Tokens - post
 // Required data: phone, password
 handlers._tokens.post = (data, callback) => {
+    _performance.mark('entered function');
     let phone = typeof data.payload.phone === 'string' && data.payload.phone.trim().length > 0 ? data.payload.phone.trim() : false;
     let password = typeof data.payload.password === 'string' && data.payload.password.trim().length > 0 ? data.payload.password.trim() : false;
+    _performance.mark('inputs validated');
 
     if (phone && password) {
         // Lookup the user who matches that phone number
+        _performance.mark('beginning user lookup');
         _data.read('users', phone, (err, userData) => {
+            _performance.mark('user lookup complete');
             if (!err && userData) {
+                _performance.mark('beginning password hashing');
                 let hashedPassword = helpers.hash(password);
+                _performance.mark('password hashing complete');
                 if (hashedPassword == userData.hashedPassword) {
+                    _performance.mark('creating data for token');
                     // If valid, create a new token with a randome name. Set expiration date 1 hour in the future.
                     let tokenId = helpers.createRandomString(20);
                     let expires = Date.now() + 1000 * 60 * 60;
@@ -374,7 +386,24 @@ handlers._tokens.post = (data, callback) => {
                     };
 
                     // Store the token
+                    _performance.mark('begining storing token');
                     _data.create('tokens', tokenId, token, (err) => {
+                        _performance.mark('storing token complete');
+
+                        // Gather all te measurements
+                        _performance.measure('Beginning to end', 'entered function', 'storing token complete');
+                        _performance.measure('Validating user input', 'entered function', 'inputs validated');
+                        _performance.measure('User lookup', 'beginning user lookup', 'password hashing complete');
+                        _performance.measure('Password hashing', 'beginning password hashing', 'password hashing complete');
+                        _performance.measure('Token data creation', 'creating data for token', 'beginning storing token');
+                        _performance.measure('Token storing', 'beginning storing token', 'storing token complete');
+
+                        // Log out all the measurements
+                        let measurements = _performance.getEntriesByType('measure');
+                        for (let measurement of measurements) {
+                            debug('\x1b[33m%s\x1b[0m', `${measurement.name} ${measurement.duration}`)
+                        }
+
                         if (!err) {
                             callback(200, token);
                         } else {
@@ -527,35 +556,44 @@ handlers._checks.post = (data, callback) => {
 
                         // Verify that the user has less checks than the max number per user
                         if (userChecks.length < config.maxChecks) {
-                            // If valid, create a new check with a randome name. Set expiration date 1 hour in the future.
-                            let checkId = helpers.createRandomString(20);
-                            let check = {
-                                id: checkId,
-                                userPhone,
-                                protocol,
-                                url,
-                                method,
-                                successCodes,
-                                timeoutSeconds
-                            };
+                            // Verify that the URL given has DNS entries
+                            let parsedUrl = _url.parse(protocol + '://' + url, true);
+                            let hostname = typeof parsedUrl.hostname === 'string' && parsedUrl.hostname.length > 0 ? parsedUrl.hostname : false;
+                            dns.resolve(hostname, (err, records) => {
+                                if (!err && records) {
+                                    // If valid, create a new check with a randome name. Set expiration date 1 hour in the future.
+                                    let checkId = helpers.createRandomString(20);
+                                    let check = {
+                                        id: checkId,
+                                        userPhone,
+                                        protocol,
+                                        url,
+                                        method,
+                                        successCodes,
+                                        timeoutSeconds
+                                    };
 
-                            // Store the check
-                            _data.create('checks', checkId, check, (err) => {
-                                if (!err) {
-                                    // Add the check id to the users object
-                                    userData.checks = userChecks;
-                                    userData.checks.push(checkId);
-
-                                    // Save the new user data
-                                    _data.update('users', userPhone, userData, (err) => {
+                                    // Store the check
+                                    _data.create('checks', checkId, check, (err) => {
                                         if (!err) {
-                                            callback(200, check);
+                                            // Add the check id to the users object
+                                            userData.checks = userChecks;
+                                            userData.checks.push(checkId);
+
+                                            // Save the new user data
+                                            _data.update('users', userPhone, userData, (err) => {
+                                                if (!err) {
+                                                    callback(200, check);
+                                                } else {
+                                                    callback(500, { Error: "Could not update the user with the new check." });
+                                                }
+                                            })
                                         } else {
-                                            callback(500, { Error: "Could not update the user with the new check." });
+                                            callback(500, { Error: "Could not create the new check. " + err });
                                         }
-                                    })
+                                    });
                                 } else {
-                                    callback(500, { Error: "Could not create the new check. " + err });
+                                    callback(400, { Error: 'The hostname of the URL entered did not resolve to any DNS entries' });
                                 }
                             });
                         } else {
